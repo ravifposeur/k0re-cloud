@@ -8,7 +8,7 @@ Dokumen ini berisi alokasi 5 paket kerja kepada 5 anggota tim. Semua paket wajib
 |----|-------------|------------------|
 | 1 | CLI & Parser YAML | Anggota 1 |
 | 2 | Daemon & REST API | Anggota 2 |
-| 3 | Orchestrator + Operations as Code (OaC) | Ravif Gayuh Wicaksono |
+| 3 | Orchestrator + Operations as Code (OaC) | Ravif |
 | 4 | Integrasi & Setup Proyek | Anggota 4 |
 | 5 | Testing & Dokumentasi | Anggota 5 |
 
@@ -33,7 +33,7 @@ Dokumen ini berisi alokasi 5 paket kerja kepada 5 anggota tim. Semua paket wajib
   - Endpoint `GET /v1/status/{name}` → ambil status dari file `/var/k0re/<name>/status.json`
   - Logging setiap request ke stdout
 
-### Paket 3: Orchestrator & Operations as Code (OaC) (Ravif Gayuh Wicaksono)
+### Paket 3: Orchestrator & Operations as Code (OaC) (Ravif)
 
 - **Output**:
   - File `internal/orchestrator/factory.go`

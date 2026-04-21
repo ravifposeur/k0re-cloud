@@ -37,6 +37,7 @@ k0re-paas/
 ├── examples/
 ├── Makefile
 ├── go.mod
+├── go.sum
 └── README.md
 ```
 
