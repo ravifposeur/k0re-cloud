@@ -9,6 +9,11 @@ import (
 	"testing"
 )
 
+func init() {
+	// Memaksa Go mundur 2 folder ke root directory (k0re-cloud)
+	// agar folder "scripts/" bisa ditemukan saat test berjalan
+	os.Chdir("../..")
+}
 func TestProvision_Success(t *testing.T) {
 	app := SetupApp()
 	payload := map[string]string{
