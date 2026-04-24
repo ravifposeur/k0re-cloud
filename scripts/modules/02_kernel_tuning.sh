@@ -5,11 +5,16 @@ FLAVOR=$3
 
 echo "  -> [Module: tune] Menganalisis parameter untuk profil: $FLAVOR"
 
-# Pengecekan Akses Root (Penting!)
+touch "/tmp/k0re_opts_${TARGET_NAME}"
+
+# 1. Pengecekan Akses Root (Penting!)
 if [ "$EUID" -ne 0 ]; then
     echo "  -> [Module: tune] [WARNING] Berjalan tanpa 'sudo'. Menggunakan mode simulasi."
     echo "  -> [Module: tune] Menerapkan Low-Latency Network Profile (BBR & TCP Fast Open)... [SIMULATED]"
     echo "  -> [Module: tune] Menyiapkan environment flag: ZGC (Zero Garbage Collector)... [SIMULATED]"
+    
+    echo "-e JAVA_OPTS='-XX:+UseZGC -Xmx1G'" > "/tmp/k0re_opts_${TARGET_NAME}"
+    
     exit 0
 fi
 

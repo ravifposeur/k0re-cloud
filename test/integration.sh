@@ -1,4 +1,5 @@
 #!/bin/bash
+# test/integration.sh
 
 BASE_URL="http://127.0.0.1:3000"
 PASS=0
@@ -24,6 +25,8 @@ if docker ps -a --format '{{.Names}}' | grep -Eq "^${TARGET_NAME}\$"; then
     echo "-> Membersihkan container lama..."
     docker rm -f "$TARGET_NAME" >/dev/null
 fi
+# Hapus folder sisa test agar tidak diblokir oleh Daemon
+rm -rf "./k0re-data/$TARGET_NAME"
 
 echo "==> Test 1: Menulis file server.yaml (Simulasi User)"
 cat <<EOF > /tmp/test-server.yaml
@@ -63,5 +66,7 @@ echo "Results: $PASS passed, $FAIL failed"
 echo "-> Membersihkan env test..."
 docker rm -f "$TARGET_NAME" >/dev/null
 rm -f /tmp/test-server.yaml
+# Bersihkan folder setelah selesai test
+rm -rf "./k0re-data/$TARGET_NAME"
 
 [ $FAIL -eq 0 ] && exit 0 || exit 1
