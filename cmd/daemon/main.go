@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"syscall"
 
+	"k0re/internal/orchestrator" // <-- Import Jembatan Go buatanmu
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -152,9 +154,20 @@ func handleProvision(c *fiber.Ctx) error {
 		})
 	}
 
-	// TODO: Replace stub with Package 3 Orchestrator call
-	log.Printf("[Orchestrator Stub] Provisioning name=%s game=%s flavor=%s ram=%s\n",
-		req.Name, req.Game, req.Flavor, req.RAM)
+	// --- INTEGRASI KE ORCHESTRATOR ---
+	payload := orchestrator.ServerPayload{
+		Name:   req.Name,
+		Game:   req.Game,
+		Flavor: req.Flavor,
+		Ram:    req.RAM,
+	}
+
+	if err := orchestrator.Provision(payload); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Status:  "error",
+			Message: fmt.Sprintf("Eksekusi OaC Gagal: %v", err),
+		})
+	}
 
 	return c.Status(fiber.StatusOK).JSON(APIResponse{
 		Status:  "success",
