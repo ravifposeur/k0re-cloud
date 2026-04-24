@@ -1,14 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
+	"time"
 
 	"k0re/internal/orchestrator" // <-- Import Jembatan Go buatanmu
 
@@ -33,10 +37,11 @@ type APIResponse struct {
 
 // StatusResponse matches the GET /v1/status/:name contract in DEVELOPMENT.md.
 type StatusResponse struct {
-	Name     string `json:"name"`
-	Status   string `json:"status"`
-	CPUUsage string `json:"cpu_usage"`
-	MemUsage string `json:"mem_usage"`
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	CPUUsage    string `json:"cpu_usage"`
+	MemUsage    string `json:"mem_usage"`
+	LastUpdated string `json:"last_updated"`
 }
 
 // safeNamePattern enforces strict naming to prevent path traversal attacks.
@@ -73,6 +78,7 @@ func SetupApp() *fiber.App {
 	v1 := app.Group("/v1")
 	v1.Post("/provision", handleProvision)
 	v1.Get("/status/:name", handleStatus)
+	v1.Get("/audit", handleAudit)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
@@ -175,7 +181,7 @@ func handleProvision(c *fiber.Ctx) error {
 	})
 }
 
-// handleStatus processes GET /v1/status/:name requests.
+// handleStatus processes GET /v1/status/:name requests (LIVE DOCKER METRICS)
 func handleStatus(c *fiber.Ctx) error {
 	serverName := c.Params("name")
 
@@ -186,29 +192,66 @@ func handleStatus(c *fiber.Ctx) error {
 		})
 	}
 
-	filePath := fmt.Sprintf("./k0re-data/%s/status.json", serverName)
-	data, err := os.ReadFile(filePath)
+	// 1. Cek status container langsung ke Docker Engine
+	cmdCheck := exec.Command("docker", "inspect", "-f", "{{.State.Status}}", serverName)
+	stateOut, err := cmdCheck.Output()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Status:  "error",
-				Message: fmt.Sprintf("Server '%s' tidak ditemukan", serverName),
-			})
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
+			Status:  "error",
+			Message: fmt.Sprintf("Server '%s' tidak ditemukan atau mati", serverName),
+		})
+	}
+	status := strings.TrimSpace(string(stateOut))
+
+	// 2. Ambil metrik live dari Docker Stats
+	cmdStats := exec.Command("docker", "stats", serverName, "--no-stream", "--format", "{{.CPUPerc}}|{{.MemUsage}}")
+	statsOut, _ := cmdStats.Output()
+
+	// Parsing output Docker ("2.5%|50MiB / 2GiB")
+	statsRaw := strings.TrimSpace(string(statsOut))
+	statsParts := strings.Split(statsRaw, "|")
+
+	cpuUsage := "0.00%"
+	memUsage := "0B"
+
+	if len(statsParts) == 2 {
+		// 1. Normalisasi CPU (Gaya Task Manager)
+		cpuRaw := strings.TrimSuffix(statsParts[0], "%")
+		cpuFloat, err := strconv.ParseFloat(cpuRaw, 64)
+		if err == nil {
+			numCores := float64(runtime.NumCPU()) // Mengambil jumlah core laptop/server
+			normalizedCPU := cpuFloat / numCores
+			cpuUsage = fmt.Sprintf("%.2f%%", normalizedCPU)
+		} else {
+			cpuUsage = statsParts[0]
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Status:  "error",
-			Message: "Gagal membaca status file",
-		})
+
+		// 2. Bersihkan Format RAM
+		rawMem := statsParts[1]
+		memSplit := strings.Split(rawMem, " / ")
+		if len(memSplit) > 0 {
+			memUsage = memSplit[0] // Hanya mengambil memori yang terpakai
+		} else {
+			memUsage = rawMem
+		}
 	}
 
-	// Validate JSON structure before returning to client
-	var status StatusResponse
-	if err := json.Unmarshal(data, &status); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Status:  "error",
-			Message: "Status file rusak atau format tidak valid",
-		})
+	// 3. Kembalikan respons JSON secara real-time
+	response := StatusResponse{
+		Name:        serverName,
+		Status:      status,
+		CPUUsage:    cpuUsage,
+		MemUsage:    memUsage,
+		LastUpdated: time.Now().Format(time.RFC3339),
 	}
 
-	return c.Status(fiber.StatusOK).JSON(status)
+	return c.Status(fiber.StatusOK).JSON(response)
+}
+
+func handleAudit(c *fiber.Ctx) error {
+	data, err := os.ReadFile("./k0re-data/audit.log")
+	if err != nil {
+		return c.Status(500).SendString("Gagal membaca log audit")
+	}
+	return c.Status(200).SendString(string(data))
 }

@@ -13,8 +13,7 @@ if [ "$EUID" -ne 0 ]; then
     echo "  -> [Module: tune] Menerapkan Low-Latency Network Profile (BBR & TCP Fast Open)... [SIMULATED]"
     echo "  -> [Module: tune] Menyiapkan environment flag: ZGC (Zero Garbage Collector)... [SIMULATED]"
     
-    echo "-e JAVA_OPTS='-XX:+UseZGC -Xmx1G'" > "/tmp/k0re_opts_${TARGET_NAME}"
-    
+    echo "-XX:+UseZGC" > "/tmp/k0re_opts_${TARGET_NAME}"    
     exit 0
 fi
 
