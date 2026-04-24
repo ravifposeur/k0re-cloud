@@ -19,6 +19,10 @@ run: build
 	@echo "Starting k0red daemon..."
 	@./$(DAEMON_BIN)
 
+test:
+	@echo "Running end-to-end integration tests..."
+	@./test/integration.sh
+
 clean:
 	@echo "Cleaning up build artifacts and test data..."
 	@rm -f $(CLI_BIN) $(DAEMON_BIN)
