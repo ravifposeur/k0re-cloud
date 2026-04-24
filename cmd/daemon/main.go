@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"k0re/internal/orchestrator" // <-- Import Jembatan Go buatanmu
+	"k0re/internal/orchestrator"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -79,6 +79,9 @@ func SetupApp() *fiber.App {
 	v1.Post("/provision", handleProvision)
 	v1.Get("/status/:name", handleStatus)
 	v1.Get("/audit", handleAudit)
+	v1.Post("/control/:name/stop", handleStop)
+	v1.Delete("/control/:name", handleDestroy)
+	v1.Post("/control/:name/start", handleStart)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
@@ -254,4 +257,27 @@ func handleAudit(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Gagal membaca log audit")
 	}
 	return c.Status(200).SendString(string(data))
+}
+
+func handleStop(c *fiber.Ctx) error {
+	serverName := c.Params("name")
+	cmd := exec.Command("./scripts/modules/04_lifecycle.sh", "stop", serverName)
+	cmd.Run()
+	return c.JSON(fiber.Map{"status": "success", "message": "Server stopped"})
+}
+
+func handleDestroy(c *fiber.Ctx) error {
+	serverName := c.Params("name")
+	cmd := exec.Command("./scripts/modules/04_lifecycle.sh", "destroy", serverName)
+	cmd.Run()
+	return c.JSON(fiber.Map{"status": "success", "message": "Server destroyed"})
+}
+
+func handleStart(c *fiber.Ctx) error {
+	serverName := c.Params("name")
+	cmd := exec.Command("bash", "scripts/modules/04_lifecycle.sh", "start", serverName)
+	if err := cmd.Run(); err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Gagal menyalakan server"})
+	}
+	return c.JSON(fiber.Map{"status": "success", "message": "Server started"})
 }

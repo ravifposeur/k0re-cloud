@@ -88,6 +88,24 @@ func main() {
 			log.Fatalf("Error: %v", err)
 		}
 
+	case "stop":
+		if len(os.Args) < 3 {
+			log.Fatal("Usage: k0re stop <name>")
+		}
+		sendControlRequest("POST", fmt.Sprintf("/v1/control/%s/stop", os.Args[2]))
+
+	case "destroy":
+		if len(os.Args) < 3 {
+			log.Fatal("Usage: k0re destroy <name>")
+		}
+		sendControlRequest("DELETE", fmt.Sprintf("/v1/control/%s", os.Args[2]))
+
+	case "start":
+		if len(os.Args) < 3 {
+			log.Fatal("Usage: k0re start <name>")
+		}
+		sendControlRequest("POST", fmt.Sprintf("/v1/control/%s/start", os.Args[2]))
+
 	default:
 		fmt.Printf("Unknown command: %s\n", os.Args[1])
 		printUsage()
@@ -101,6 +119,9 @@ func printUsage() {
 	fmt.Println("  apply    Apply configuration from YAML file (-f <config.yaml>)")
 	fmt.Println("  status   View live metrics of a specific server (status <server-name>)")
 	fmt.Println("  audit    View activity logs and audit trail")
+	fmt.Println("  stop     Stop a running server (stop <server-name>)")
+	fmt.Println("  destroy  Delete a server permanently (destroy <name>)")
+	fmt.Println("  start    Start a stopped server (start <server-name>)")
 }
 
 // applyConfig reads, parses, validates, and sends the configuration to the daemon
@@ -246,4 +267,15 @@ func getAuditLog() error {
 	fmt.Print(string(body))
 
 	return nil
+}
+
+func sendControlRequest(method, path string) {
+	req, _ := http.NewRequest(method, daemonBaseURL+path, nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != 200 {
+		fmt.Println("Execute error")
+		return
+	}
+	fmt.Printf("%s command is success\n", os.Args[1])
 }
