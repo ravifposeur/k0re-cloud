@@ -2,7 +2,10 @@ module k0re
 
 go 1.22.2
 
-require github.com/gofiber/fiber/v2 v2.52.12
+require (
+	github.com/gofiber/fiber/v2 v2.52.12
+	gopkg.in/yaml.v3 v3.0.1
+)
 
 require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
