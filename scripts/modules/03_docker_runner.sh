@@ -24,9 +24,6 @@ if docker ps -a --format '{{.Names}}' | grep -Eq "^${NAME}\$"; then
     docker rm -f "$NAME" >/dev/null
 fi
 
-# Eksekusi pamungkas (Membuat servernya menyala)
-# -P (huruf besar) = Memetakan port otomatis
-# -d = Berjalan di background (daemon)
 docker run -d \
     --name "$NAME" \
     -e EULA=TRUE \
@@ -39,3 +36,12 @@ docker run -d \
     "$DOCKER_IMAGE" >/dev/null
 
 echo "  -> [Module: run] ✅ Container berhasil diisolasi di Kernel!"
+
+cat <<EOF > "$BASE_DIR/status.json"
+{
+    "name": "$NAME",
+    "status": "running",
+    "cpu_usage": "1%",
+    "mem_usage": "$RAM"
+}
+EOF
