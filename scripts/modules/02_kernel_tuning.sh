@@ -7,7 +7,7 @@ echo "  -> [Module: tune] Menganalisis parameter untuk profil: $FLAVOR"
 
 touch "/tmp/k0re_opts_${TARGET_NAME}"
 
-# 1. Pengecekan Akses Root (Penting!)
+# Pengecekan Akses Root (Penting!)
 if [ "$EUID" -ne 0 ]; then
     echo "  -> [Module: tune] [WARNING] Berjalan tanpa 'sudo'. Menggunakan mode simulasi."
     echo "  -> [Module: tune] Menerapkan Low-Latency Network Profile (BBR & TCP Fast Open)... [SIMULATED]"
@@ -18,7 +18,7 @@ if [ "$EUID" -ne 0 ]; then
     exit 0
 fi
 
-echo "  -> [Module: tune] ⚠️ Akses Root terdeteksi! Memulai Injeksi Kernel (Gacor Mode)..."
+echo "  -> [Module: tune] Akses Root terdeteksi! Memulai Injeksi Kernel (Gacor Mode)..."
 
 # Mengganti algoritma antrean jaringan standar menjadi BBR
 echo "  -> [Module: tune] Menginjeksi TCP BBR Congestion Control..."
@@ -44,7 +44,7 @@ if [ -f /sys/kernel/mm/transparent_hugepage/enabled ]; then
     echo "madvise" > /sys/kernel/mm/transparent_hugepage/enabled
 fi
 
-# 4. CPU Scheduler (Khusus Profil Kompetitif)
+# CPU Scheduler
 if [ "$FLAVOR" = "pvp-competitive" ]; then
     echo "  -> [Module: tune] ⚡ Profil Kompetitif Terdeteksi! Memaksa CPU ke mode Performa..."
     # Memaksa CPU tidak bolak-balik istirahat (C-States) jika governor tersedia
