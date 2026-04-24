@@ -1,0 +1,6 @@
+server:
+  name: arena-ugm-01
+  game: minecraft
+  flavor: pvp-competitive
+  resources:
+    ram: 2G
