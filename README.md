@@ -1,10 +1,7 @@
-Tentu, Ravif. Mengingat proyek **K0re Cloud** ini mengusung semangat efisiensi teknologi untuk akar rumput dengan arsitektur yang pragmatis (Go dan Bash), berikut adalah draf **README.md** dengan gaya bahasa formal, teknis, dan objektif.
-
----
 
 # K0re Cloud: Orchestrator PaaS untuk Komunitas Akar Rumput
 
-**K0re Cloud** adalah sebuah *Platform-as-a-Service* (PaaS) minimalis yang dirancang untuk mengorkestrasi *game server* (fokus saat ini: Minecraft) di atas infrastruktur Linux menggunakan Docker. Proyek ini dibangun dengan filosofi efisiensi sumber daya, kemandirian teknologi, dan penolakan terhadap ketergantungan pada penyedia modal besar yang seringkali membebani komunitas dengan biaya *overhead* yang tidak perlu.
+**K0re Cloud** adalah sebuah *Platform-as-a-Service* (PaaS) minimalis yang dirancang untuk mengorkestrasi *game server* (fokus saat ini: Minecraft) di atas infrastruktur Linux menggunakan Docker. Proyek ini dibangun dengan filosofi efisiensi sumber daya, kemandirian teknologi, dan penolakan terhadap ketergantungan pada penyedia layanan awan komersial yang membebani komunitas dengan biaya *overhead* tinggi.
 
 ---
 
@@ -12,29 +9,27 @@ Tentu, Ravif. Mengingat proyek **K0re Cloud** ini mengusung semangat efisiensi t
 
 K0re Cloud menggunakan pendekatan **Operations-as-Code (OaC)** dengan memisahkan logika orkestrasi menjadi tiga lapisan utama:
 
-1.  **Core Daemon (Go/Fiber):** Berfungsi sebagai otak pusat yang mengelola permintaan API, validasi parameter, dan koordinasi modul.
-2.  **Logic Modules (Bash):** Serangkaian skrip *low-level* yang berinteraksi langsung dengan Kernel Linux dan Docker Engine untuk melakukan *tuning*, *provisioning*, dan manajemen siklus hidup container.
-3.  **CLI Controller (Go):** Antarmuka baris perintah yang efisien bagi pengguna untuk berinteraksi dengan Daemon secara asinkron.
+1.  **Core Daemon (Go/Fiber):** Pusat kendali yang mengelola permintaan API, validasi parameter, dan koordinasi modul secara asinkron.
+2.  **Logic Modules (Bash):** Skrip *low-level* yang berinteraksi langsung dengan Kernel Linux dan Docker Engine untuk optimasi sistem dan manajemen kontainer.
+3.  **CLI Controller (Go):** Antarmuka baris perintah tunggal untuk manajemen infrastruktur secara efisien.
 
 ---
 
-## ✨ Fitur Utama
+## 🚀 Panduan Instalasi & Prasyarat
 
-* **Automated Provisioning:** Deployment server game secara instan melalui konfigurasi file YAML.
-* **Live Kernel Monitoring:** Pemantauan metrik CPU dan RAM secara *real-time* langsung dari Docker Stats dengan normalisasi penggunaan *core* CPU.
-* **Lifecycle Management:** Kendali penuh atas status server melalui perintah `start`, `stop`, dan `destroy`.
-* **Resource Isolation:** Limitasi memori pada level JVM untuk mencegah kegagalan alokasi pada host dengan spesifikasi terbatas.
-* **Transparent Audit Trail:** Pencatatan otomatis setiap aksi administratif ke dalam log audit untuk akuntabilitas sistem.
+Sebelum melakukan kompilasi, pastikan sistem Anda telah terpasang paket-paket dasar berikut (Instruksi untuk distribusi berbasis Debian/Ubuntu):
 
----
+```bash
+# Update repository dan install prasyarat sistem
+sudo apt update
+sudo apt install -y docker.io docker-compose-v2 make golang-go
+```
 
-## 🚀 Panduan Instalasi
-
-### Prasyarat
-* **Linux OS**
-* **Docker Engine** & **Docker Compose**
-* **Go 1.21+**
-* **Make** (Build tools)
+Pastikan pengguna aktif memiliki izin akses ke Docker Engine tanpa `sudo`:
+```bash
+sudo usermod -aG docker $USER
+# Harap log out dan log in kembali untuk menerapkan perubahan grup
+```
 
 ### Langkah-langkah Build
 1. Kloning repositori:
@@ -42,43 +37,51 @@ K0re Cloud menggunakan pendekatan **Operations-as-Code (OaC)** dengan memisahkan
    git clone https://github.com/username/k0re-cloud.git
    cd k0re-cloud
    ```
-2. Kompilasi Daemon dan CLI:
+2. Jalankan proses build melalui Makefile:
    ```bash
    make build
-   ```
-3. Instalasi biner ke sistem:
-   ```bash
    sudo make install
    ```
 
 ---
 
-## 📖 Penggunaan CLI
+## 🛠️ Alur Kerja Makefile
 
-K0re Cloud menyediakan perintah yang intuitif untuk manajemen infrastruktur:
+Proyek ini menggunakan `Makefile` untuk menstandardisasi proses pengembangan dan operasional:
+
+| Perintah | Deskripsi |
+| :--- | :--- |
+| `make build` | Mengompilasi kode sumber Go menjadi biner `k0red` (Daemon) dan `k0re` (CLI). |
+| `make install` | Memasang biner CLI ke `/usr/local/bin` agar dapat diakses secara global. |
+| `make test` | Menjalankan pengujian *End-to-End* terintegrasi untuk memvalidasi seluruh siklus hidup server. |
+| `make run` | Menjalankan Daemon secara langsung di terminal untuk keperluan pemantauan log/debugging. |
+| `make clean` | Menghapus biner hasil kompilasi, folder data sementara, dan log audit. |
+
+---
+
+## 📖 Penggunaan CLI
 
 | Perintah | Deskripsi | Contoh |
 | :--- | :--- | :--- |
-| **apply** | Melakukan deployment berdasarkan YAML | `k0re apply -f config.yaml` |
-| **status** | Melihat metrik live server | `k0re status arena-01` |
-| **stop** | Menghentikan container sementara | `k0re stop arena-01` |
-| **start** | Menyalakan kembali container | `k0re start arena-01` |
-| **destroy** | Menghapus server dan sumber daya | `k0re destroy arena-01` |
-| **audit** | Melihat riwayat aktivitas | `k0re audit` |
+| **apply** | Deployment server berdasarkan file YAML | `k0re apply -f config.yaml` |
+| **status** | Memantau metrik live (CPU/RAM) | `k0re status arena-ugm-01` |
+| **stop** | Menghentikan operasional server | `k0re stop arena-ugm-01` |
+| **start** | Menyalakan kembali server yang terhenti | `k0re start arena-ugm-01` |
+| **destroy** | Menghapus server dan seluruh datanya | `k0re destroy arena-ugm-01` |
+| **audit** | Melihat riwayat aktivitas aktivitas | `k0re audit` |
 
 ---
 
 ## 📄 Dokumentasi API
 
-Sistem ini mengikuti standar **OpenAPI 3.0**. Detail mengenai *endpoint*, skema permintaan, dan format respons dapat ditemukan pada file:
+Sistem ini menggunakan standar **OpenAPI 3.0**. Definisi teknis mengenai *endpoint* dan skema data tersedia pada file:
 👉 [**api.yaml](./api.yaml)**
 
 ---
 
 ## ⚖️ Perspektif dan Filosofi
 
-
-K0re Cloud dibangun dengan objektivitas bahwa skalabilitas tidak harus selalu berarti kompleksitas. Dengan memanfaatkan alat yang sudah ada di level sistem (Bash/Docker) dan dibalut dengan kekuatan konkurensi Go, K0re membuktikan bahwa infrastruktur mandiri yang stabil dapat dibangun tanpa harus tunduk pada ekosistem *proprietary* yang mahal.
+K0re Cloud membuktikan bahwa skalabilitas tidak harus selalu berarti kompleksitas. Dengan mengoptimalkan perkakas bawaan sistem operasi (Bash/Docker) dan efisiensi bahasa Go, kita dapat membangun infrastruktur mandiri yang stabil tanpa harus tunduk pada ekosistem *proprietary* yang mahal. Teknologi ini adalah bentuk kedaulatan digital bagi komunitas akar rumput.
 
 ---
 
