@@ -141,7 +141,8 @@ func handleProvision(c *fiber.Ctx) error {
 	}
 
 	// Idempotency and state check
-		targetDir := fmt.Sprintf("./k0re-data/%s", req.Name)	if _, err := os.Stat(targetDir); err == nil {
+	targetDir := fmt.Sprintf("/var/k0re/%s", req.Name)
+	if _, err := os.Stat(targetDir); err == nil {
 		return c.Status(fiber.StatusConflict).JSON(APIResponse{
 			Status:  "error",
 			Message: fmt.Sprintf("Server '%s' sudah ada", req.Name),
@@ -185,7 +186,8 @@ func handleStatus(c *fiber.Ctx) error {
 		})
 	}
 
-filePath := fmt.Sprintf("./k0re-data/%s/status.json", serverName)
+	filePath := fmt.Sprintf("./k0re-data/%s/status.json", serverName)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
