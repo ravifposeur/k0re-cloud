@@ -74,8 +74,8 @@ Proyek ini menggunakan `Makefile` untuk menstandardisasi proses pengembangan dan
 
 ## 📄 Dokumentasi API
 
-Sistem ini menggunakan standar **OpenAPI 3.0**. Definisi teknis mengenai *endpoint* dan skema data tersedia pada file:
-👉 [**api.yaml](./api.yaml)**
+Sistem ini menggunakan standar **OpenAPI 3.0**. Definisi teknis mengenai *endpoint* dan skema data tersedia pada:
+[API](https://app.swaggerhub.com/apis/ravif/k0recore/1.0.0)
 
 ---
 
