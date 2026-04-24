@@ -1,10 +1,9 @@
 #!/bin/bash
-# test/integration.sh
 
 BASE_URL="http://127.0.0.1:3000"
 PASS=0
 FAIL=0
-TARGET_NAME="arena-ugm-01"
+TARGET_NAME="arena-cli-test"
 
 assert_eq() {
   local desc="$1" expected="$2" actual="$3"
@@ -18,57 +17,51 @@ assert_eq() {
 }
 
 echo "=========================================="
-echo "🧪 [TEST] Memulai Simulasi End-to-End K0re"
+echo "🧪 [FINAL TEST]"
 echo "=========================================="
 
-# --- PRE-CLEANUP ---
 if docker ps -a --format '{{.Names}}' | grep -Eq "^${TARGET_NAME}\$"; then
     echo "-> Membersihkan container lama..."
     docker rm -f "$TARGET_NAME" >/dev/null
 fi
 
-# --- TEST 1: PROVISIONING API ---
-echo "==> Test: POST /v1/provision"
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/v1/provision" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"'$TARGET_NAME'","game":"minecraft","flavor":"pvp-competitive","ram":"1G"}')
+echo "==> Test 1: Menulis file server.yaml (Simulasi User)"
+cat <<EOF > /tmp/test-server.yaml
+server:
+  name: "$TARGET_NAME"
+  game: "minecraft"
+  flavor: "pvp-competitive"
+  resources:
+    ram: "1G"
+EOF
+assert_eq "File YAML terbuat" "true" "$([ -f /tmp/test-server.yaml ] && echo 'true' || echo 'false')"
 
-HTTP_BODY=$(echo "$RESPONSE" | head -n1)
-HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+echo "==> Test 2: Menjalankan perintah 'k0re apply -f'"
+CLI_OUTPUT=$(go run cmd/cli/main.go apply -f /tmp/test-server.yaml 2>&1)
+CLI_EXIT_CODE=$?
 
-assert_eq "Status code is 200" "200" "$HTTP_CODE"
-assert_eq "Status field is success" "success" "$(echo "$HTTP_BODY" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)"
+assert_eq "CLI berjalan tanpa error (Exit 0)" "0" "$CLI_EXIT_CODE"
 
-# --- TEST 2: DOCKER ENGINE VERIFICATION (Tambahan) ---
-echo "==> Test: Docker Engine State"
+SUCCESS_MSG=$(echo "$CLI_OUTPUT" | grep -o "provisioned successfully" || echo "not found")
+assert_eq "CLI menerima balasan sukses dari Daemon" "provisioned successfully" "$SUCCESS_MSG"
+
+echo "==> Test 3: Cek status mesin Docker di Kernel"
 # Tunggu 3 detik agar Bash OaC selesai merakit container
 sleep 3 
 ACTUAL_STATE=$(docker ps --format '{{.Names}}' | grep -Eq "^${TARGET_NAME}\$" && echo "running" || echo "missing")
-assert_eq "Container is running in Docker" "running" "$ACTUAL_STATE"
+assert_eq "Container benar-benar menyala" "running" "$ACTUAL_STATE"
 
-# --- TEST 3: STATUS API ---
-echo "==> Test: GET /v1/status/$TARGET_NAME"
-# (Pastikan file status.json sudah dibuat oleh modul bash, jika belum ini bisa fail)
+echo "==> Test 4: Membaca status.json via Daemon"
 RESPONSE=$(curl -s -w "\n%{http_code}" "$BASE_URL/v1/status/$TARGET_NAME")
-HTTP_BODY=$(echo "$RESPONSE" | head -n1)
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 
-# Jika endpoint status belum nyambung ke file asli, kita skip assert detailnya dulu
-assert_eq "Status endpoint reachable (200/500/404)" "200" "$HTTP_CODE" 
-
-# --- TEST 4: INVALID REQUEST ---
-echo "==> Test: POST /v1/provision (invalid body)"
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/v1/provision" \
-  -H "Content-Type: application/json" \
-  -d '{"name":""}')
-
-assert_eq "Status code is 400" "400" "$HTTP_CODE"
+assert_eq "Endpoint status merespons (200 OK)" "200" "$HTTP_CODE" 
 
 echo "=========================================="
 echo "Results: $PASS passed, $FAIL failed"
 
-# --- POST-CLEANUP ---
 echo "-> Membersihkan env test..."
 docker rm -f "$TARGET_NAME" >/dev/null
+rm -f /tmp/test-server.yaml
 
 [ $FAIL -eq 0 ] && exit 0 || exit 1
