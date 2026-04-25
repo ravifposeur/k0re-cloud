@@ -6,7 +6,7 @@ Dokumen ini berisi alokasi 5 paket kerja kepada 5 anggota tim. Semua paket wajib
 
 | ID | Paket Kerja | Penanggung Jawab |
 |----|-------------|------------------|
-| 1 | CLI & Parser YAML | Anggota 1 |
+| 1 | CLI & Parser YAML | Marco |
 | 2 | Daemon & REST API | Anggota 2 |
 | 3 | Orchestrator + Operations as Code (OaC) | Ravif |
 | 4 | Integrasi & Setup Proyek | Anggota 4 |
